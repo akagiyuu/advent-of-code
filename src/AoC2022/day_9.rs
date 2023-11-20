@@ -3,31 +3,31 @@ use std::{collections::HashSet, str::FromStr};
 use anyhow::bail;
 
 pub type Point = (i32, i32);
-fn distance_square(a: &Point, b: &Point) -> i32 {
-    (a.0 - b.0).pow(2) + (a.1 - b.1).pow(2)
-}
 
-pub enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
-}
-impl FromStr for Direction {
-    type Err = anyhow::Error;
+fn follow_prev(current: &mut Point, prev: Point) {
+    let diff_x = prev.0 - current.0;
+    let diff_y = prev.1 - current.1;
+    let distance_square = diff_x.pow(2) + diff_y.pow(2);
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "L" => Ok(Self::Left),
-            "R" => Ok(Self::Right),
-            "U" => Ok(Self::Up),
-            "D" => Ok(Self::Down),
-            _ => bail!("Invalid direction format"),
-        }
+    if distance_square <= 2 {
+        return;
     }
+    current.0 += match diff_x {
+        2 | 1 => 1,
+        0 => 0,
+        -2 | -1 => -1,
+        _ => 0,
+    };
+    current.1 += match diff_y {
+        2 | 1 => 1,
+        0 => 0,
+        -2 | -1 => -1,
+        _ => 0,
+    };
 }
+
 pub struct Motion {
-    pub direction: Direction,
+    pub direction: u8,
     pub steps: usize,
 }
 impl FromStr for Motion {
@@ -36,7 +36,7 @@ impl FromStr for Motion {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.split_once(' ') {
             Some((direction, steps)) => Ok(Self {
-                direction: Direction::from_str(direction)?,
+                direction: direction.as_bytes()[0],
                 steps: steps.parse()?,
             }),
             None => bail!("Invalid input"),
@@ -44,46 +44,26 @@ impl FromStr for Motion {
     }
 }
 
-pub fn visited_position_count(motions: Vec<Motion>) -> usize {
+pub fn visited_position_count<const N: usize>(input: &str) -> usize {
     let mut visited_positions = HashSet::new();
-    let mut head = (0, 0);
-    let mut tail = (0, 0);
-    visited_positions.insert(tail);
-    for motion in motions {
+    let mut rope = [(0, 0); N];
+    visited_positions.insert(rope[N - 1]);
+
+    for motion in input.lines().map(|line| Motion::from_str(line).unwrap()) {
         for _ in 0..motion.steps {
             match motion.direction {
-                Direction::Left => {
-                    head.0 -= 1;
-                    if distance_square(&head, &tail) > 2 {
-                        tail = (head.0 + 1, head.1);
-                        visited_positions.insert(tail);
-                    }
-                }
-                Direction::Right => {
-                    head.0 += 1;
-                    if distance_square(&head, &tail) > 2 {
-                        tail = (head.0 - 1, head.1);
-                        visited_positions.insert(tail);
-                    }
-                }
-                Direction::Up => {
-                    head.1 += 1;
-                    if distance_square(&head, &tail) > 2 {
-                        tail = (head.0, head.1 - 1);
-                        visited_positions.insert(tail);
-                    }
-                }
-                Direction::Down => {
-                    head.1 -= 1;
-                    if distance_square(&head, &tail) > 2 {
-                        tail = (head.0, head.1 + 1);
-                        visited_positions.insert(tail);
-                    }
-                }
+                b'L' => rope[0].0 -= 1,
+                b'R' => rope[0].0 += 1,
+                b'U' => rope[0].1 += 1,
+                b'D' => rope[0].1 -= 1,
+                _ => {}
             }
+            for i in 1..N {
+                let prev = rope[i - 1];
+                follow_prev(&mut rope[i], prev);
+            }
+            visited_positions.insert(rope[N - 1]);
         }
     }
-    println!("{:?}", visited_positions);
-
     visited_positions.len()
 }
