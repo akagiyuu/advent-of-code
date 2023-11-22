@@ -1,15 +1,24 @@
-pub fn find_min_index(array: &[usize]) -> usize {
+use std::cmp::Ordering;
+
+pub fn find_min_index<F>(array: &[usize], compare: F) -> usize
+where
+    F: Fn(usize, usize) -> Ordering,
+{
     assert!(!array.is_empty());
 
     let mut min_index = 0;
     for i in 1..array.len() {
-        if array[i] < array[min_index] {
-            min_index = i;
+        match compare(array[i], array[min_index]) {
+            Ordering::Less => min_index = i,
+            _ => {}
         }
     }
     min_index
 }
-pub fn find_n_max<const N: usize>(array: &[usize]) -> [usize; N] {
+pub fn find_n_max<const N: usize, F>(array: &[usize], compare: F) -> [usize; N]
+where
+    F: Fn(usize, usize) -> Ordering,
+{
     assert!(!array.is_empty());
     assert!(N > 0);
     assert!(N <= array.len());
@@ -20,9 +29,10 @@ pub fn find_n_max<const N: usize>(array: &[usize]) -> [usize; N] {
     }
 
     for i in N..array.len() {
-        let min_index = find_min_index(&result);
-        if array[i] > result[min_index] {
-            result[min_index] = array[i];
+        let min_index = find_min_index(&result, compare);
+        match compare(array[i], result[min_index]) {
+            Ordering::Greater => result[min_index] = array[i],
+            _ => {}
         }
     }
 
