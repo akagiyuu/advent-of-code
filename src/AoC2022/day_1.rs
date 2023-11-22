@@ -1,5 +1,7 @@
 use std::cmp::max;
 
+use crate::util::find_min_index;
+
 pub fn find_max_calories(input: &str) -> usize {
     let input = format!("{}\n", input);
     let mut max_calories = 0;
@@ -14,16 +16,6 @@ pub fn find_max_calories(input: &str) -> usize {
         current_calories += line.parse::<usize>().unwrap();
     });
     max_calories
-}
-
-fn find_min_index<const N: usize>(array: &[usize; N]) -> usize {
-    let mut min_index = 0;
-    for i in 1..N {
-        if array[i] < array[min_index] {
-            min_index = i;
-        }
-    }
-    min_index
 }
 
 pub fn find_n_max_calories_sum<const N: usize>(input: &str) -> usize {

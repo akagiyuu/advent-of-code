@@ -37,7 +37,7 @@ pub fn get_total_priority(input: &str) -> usize {
 }
 
 fn get_common_item_priority_in_group<const N: usize>(group: [&str; N]) -> usize {
-    let combined_existence = group
+    let combined_existence_array = group
         .iter()
         .map(|&rucksack| generate_existence_array(rucksack))
         .fold([true; MAX_PRIORITY + 1], |result, rucksack| {
@@ -48,7 +48,7 @@ fn get_common_item_priority_in_group<const N: usize>(group: [&str; N]) -> usize 
             result
         });
 
-    for (i, &exist) in combined_existence.iter().enumerate() {
+    for (i, &exist) in combined_existence_array.iter().enumerate() {
         if exist {
             return i;
         }
