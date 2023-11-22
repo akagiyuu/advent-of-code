@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 dashmap = "5.5.3"
+evalexpr = "11.2.0"

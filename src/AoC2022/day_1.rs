@@ -28,7 +28,7 @@ pub fn find_n_max_calories_sum<const N: usize>(input: &str) -> usize {
             return;
         }
 
-        let min_index = find_min_index(&max_n_calories, |a, b| a.cmp(&b));
+        let min_index = find_min_index(&max_n_calories, |a, b| a.cmp(b));
         max_n_calories[min_index] = max(max_n_calories[min_index], current_calories);
         current_calories = 0;
     });
