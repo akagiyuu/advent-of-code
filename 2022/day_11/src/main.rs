@@ -1,6 +1,7 @@
 use std::str::FromStr;
-
 use evalexpr::eval_int;
+
+const INPUT: &str = include_str!("input.txt");
 
 struct Test {
     divide_by: usize,
@@ -121,4 +122,9 @@ pub fn calculate_monkey_bussiness_level(input: &str, round: usize, divide_by: us
 
     monkeys.sort_by(|a, b| b.number_of_inspection.cmp(&a.number_of_inspection));
     monkeys[0].number_of_inspection * monkeys[1].number_of_inspection
+}
+
+fn main() {
+    println!("{}", calculate_monkey_bussiness_level(INPUT, 20, 3));
+    println!("{}", calculate_monkey_bussiness_level(INPUT, 10_000, 1));
 }

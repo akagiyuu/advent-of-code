@@ -1,3 +1,6 @@
+#![feature(iter_array_chunks)]
+const INPUT: &str = include_str!("input.txt");
+
 fn calculate_priority(c: u8) -> u8 {
     if c.is_ascii_lowercase() {
         return c - b'a' + 1;
@@ -5,9 +8,10 @@ fn calculate_priority(c: u8) -> u8 {
     if c.is_ascii_uppercase() {
         return c - b'A' + 27;
     }
-    println!("test");
     0
 }
+
+const MAX_PRIORITY: usize = 52;
 
 fn generate_existence_array(a: &str) -> [bool; MAX_PRIORITY + 1] {
     let mut exist = [false; MAX_PRIORITY + 1];
@@ -17,7 +21,6 @@ fn generate_existence_array(a: &str) -> [bool; MAX_PRIORITY + 1] {
     exist
 }
 
-const MAX_PRIORITY: usize = 52;
 fn get_common_item_priority(rucksack: &str) -> usize {
     let (a, b) = rucksack.split_at(rucksack.len() / 2);
 
@@ -30,10 +33,6 @@ fn get_common_item_priority(rucksack: &str) -> usize {
         }
     }
     0
-}
-
-pub fn get_total_priority(input: &str) -> usize {
-    input.lines().map(get_common_item_priority).sum()
 }
 
 fn get_common_item_priority_in_group<const N: usize>(group: [&str; N]) -> usize {
@@ -56,10 +55,14 @@ fn get_common_item_priority_in_group<const N: usize>(group: [&str; N]) -> usize 
     0
 }
 
-pub fn get_total_priority_new(input: &str) -> usize {
-    input
-        .lines()
-        .array_chunks::<3>()
-        .map(get_common_item_priority_in_group)
-        .sum()
+fn main() {
+    println!("{}", INPUT.lines().map(get_common_item_priority).sum::<usize>());
+    println!(
+        "{}",
+        INPUT
+            .lines()
+            .array_chunks::<3>()
+            .map(get_common_item_priority_in_group)
+            .sum::<usize>()
+    );
 }

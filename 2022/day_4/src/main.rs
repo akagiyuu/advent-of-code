@@ -1,6 +1,7 @@
 use std::str::FromStr;
-
 use anyhow::bail;
+
+const INPUT: &str = include_str!("input.txt");
 
 #[derive(Debug)]
 struct InclusiveRange {
@@ -55,4 +56,31 @@ pub fn count_overlapping_pair(input: &str) -> usize {
         })
         .filter(|&x| x)
         .count()
+}
+
+fn main() {
+    let pairs = INPUT.lines().map(|line| line.split_once(',').unwrap());
+    println!(
+        "{}",
+        pairs
+            .clone()
+            .map(|(a, b)| {
+                let a = InclusiveRange::from_str(a).unwrap();
+                let b = InclusiveRange::from_str(b).unwrap();
+                a.contain(&b) || b.contain(&a)
+            })
+            .filter(|&x| x)
+            .count()
+    );
+    println!(
+        "{}",
+        pairs
+            .map(|(a, b)| {
+                let a = InclusiveRange::from_str(a).unwrap();
+                let b = InclusiveRange::from_str(b).unwrap();
+                a.is_overlapping(&b)
+            })
+            .filter(|&x| x)
+            .count()
+    );
 }

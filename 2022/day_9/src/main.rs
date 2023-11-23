@@ -1,6 +1,8 @@
 use std::{collections::HashSet, str::FromStr};
-
 use anyhow::bail;
+
+const INPUT: &str = include_str!("input.txt");
+
 
 pub type Point = (i32, i32);
 
@@ -66,4 +68,9 @@ pub fn visited_position_count<const N: usize>(input: &str) -> usize {
         }
     }
     visited_positions.len()
+}
+
+fn main() {
+    println!("{}", visited_position_count::<2>(INPUT));
+    println!("{}", visited_position_count::<10>(INPUT));
 }

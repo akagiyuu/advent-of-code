@@ -1,6 +1,9 @@
+#![feature(iter_array_chunks)]
 use std::fmt::Write;
 
-pub fn calculate_signal_stregth(input: &str) -> i32 {
+const INPUT: &str = include_str!("input.txt");
+
+fn calculate_signal_stregth(input: &str) -> i32 {
     let mut signal_stregth = 0;
     let mut register = 1;
     let mut pivot_cycle = 20;
@@ -84,4 +87,9 @@ pub fn render(input: &str) -> String {
     }
 
     render_crt(&crt)
+}
+
+fn main() {
+    println!("{}", calculate_signal_stregth(INPUT));
+    println!("{}", render(INPUT));
 }
