@@ -11,11 +11,12 @@ impl TryFrom<&[u8]> for Packet {
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let mut bytes = value.iter();
         let mut result = Self::List(vec![]);
+        let mut temp = String::new();
 
         while let Some(c) = bytes.next() {
             match c {
                 b'[' => {
-                    let mut temp = String::new();
+                    temp.clear();
                     let mut depth = 1;
 
                     while depth > 0 {
@@ -32,7 +33,7 @@ impl TryFrom<&[u8]> for Packet {
                     }
                 }
                 c if c.is_ascii_digit() => {
-                    let mut temp = String::new();
+                    temp.clear();
                     temp.push(*c as char);
                     for &c in bytes.by_ref() {
                         if c == b',' {
@@ -93,11 +94,12 @@ fn main() {
         .fold(0, |result, (i, _)| result + i + 1);
     println!("{}", index_sum);
 
+
     let divider_a = Packet::try_from("[2]".as_bytes()).unwrap();
     let divider_b = Packet::try_from("[6]".as_bytes()).unwrap();
 
     let mut packets: Vec<Packet> = vec![divider_a.clone(), divider_b.clone()];
-    for line in INPUT.trim().lines() {
+    for line in INPUT.lines() {
         if line.is_empty() {
             continue;
         }
