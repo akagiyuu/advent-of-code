@@ -3,23 +3,9 @@ const INPUT: &str = include_str!("input.txt");
 
 type Point = (usize, usize);
 
-fn parse_input(input: &str) -> Vec<Vec<Point>> {
-    input
-        .lines()
-        .map(|line| {
-            line.split(" -> ")
-                .map(|point| {
-                    point
-                        .split_once(',')
-                        .map(|(a, b)| (b.parse().unwrap(), a.parse().unwrap()))
-                        .unwrap()
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>()
-}
-
 fn shift_paths(paths: &mut [Vec<Point>], sand_drop_point: &mut Point) {
+    let rows = paths.iter().flatten().map(|point| point.0).max().unwrap() + 2;
+
     let min_column = paths
         .iter()
         .flatten()
@@ -27,7 +13,7 @@ fn shift_paths(paths: &mut [Vec<Point>], sand_drop_point: &mut Point) {
         .min()
         .unwrap()
         .min(500)
-        - 400;
+        - rows;
     sand_drop_point.1 -= min_column;
     paths.iter_mut().for_each(|path| {
         path.iter_mut().for_each(|point| {
@@ -45,7 +31,7 @@ fn generate_grid(paths: &[Vec<Point>], sand_drop_point: &Point) -> Vec<Vec<bool>
         .max()
         .unwrap()
         .max(sand_drop_point.1)
-        + 500;
+        + rows + 1;
     let mut grid = vec![vec![false; columns]; rows];
     for path in paths {
         for &[a, b] in path.as_slice().array_windows::<2>() {
@@ -76,7 +62,10 @@ fn print_grid(grid: &[Vec<bool>]) {
         println!();
     }
 }
-fn calculuate_sand_needed_to_reach_bottom(mut grid: Vec<Vec<bool>>, sand_drop_point: Point) -> usize {
+fn calculuate_sand_needed_to_reach_bottom(
+    mut grid: Vec<Vec<bool>>,
+    sand_drop_point: Point,
+) -> usize {
     let mut sand_needed = 0;
     loop {
         let mut sand = sand_drop_point;
@@ -88,7 +77,10 @@ fn calculuate_sand_needed_to_reach_bottom(mut grid: Vec<Vec<bool>>, sand_drop_po
                 sand = (sand.0 + 1, sand.1 - 1);
                 continue;
             }
-            if sand.0 + 1 < grid.len() && sand.1 + 1 < grid[0].len() && !grid[sand.0 + 1][sand.1 + 1] {
+            if sand.0 + 1 < grid.len()
+                && sand.1 + 1 < grid[0].len()
+                && !grid[sand.0 + 1][sand.1 + 1]
+            {
                 sand = (sand.0 + 1, sand.1 + 1);
                 continue;
             }
@@ -115,7 +107,10 @@ fn calculuate_sand_needed_to_reach_drop(mut grid: Vec<Vec<bool>>, sand_drop_poin
                 sand = (sand.0 + 1, sand.1 - 1);
                 continue;
             }
-            if sand.0 + 1 < grid.len() && sand.1 + 1 < grid[0].len() && !grid[sand.0 + 1][sand.1 + 1] {
+            if sand.0 + 1 < grid.len()
+                && sand.1 + 1 < grid[0].len()
+                && !grid[sand.0 + 1][sand.1 + 1]
+            {
                 sand = (sand.0 + 1, sand.1 + 1);
                 continue;
             }
@@ -132,10 +127,29 @@ fn calculuate_sand_needed_to_reach_drop(mut grid: Vec<Vec<bool>>, sand_drop_poin
 }
 
 fn main() {
-    let mut paths = parse_input(INPUT);
+    let mut paths = INPUT
+        .lines()
+        .map(|line| {
+            line.split(" -> ")
+                .map(|point| {
+                    point
+                        .split_once(',')
+                        .map(|(a, b)| (b.parse().unwrap(), a.parse().unwrap()))
+                        .unwrap()
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+
     let mut sand_drop_point = (0, 500);
     shift_paths(&mut paths, &mut sand_drop_point);
     let grid = generate_grid(&paths, &sand_drop_point);
-    println!("{}", calculuate_sand_needed_to_reach_bottom(grid.clone(), sand_drop_point));
-    println!("{}", calculuate_sand_needed_to_reach_drop(grid.clone(), sand_drop_point));
+    println!(
+        "{}",
+        calculuate_sand_needed_to_reach_bottom(grid.clone(), sand_drop_point)
+    );
+    println!(
+        "{}",
+        calculuate_sand_needed_to_reach_drop(grid.clone(), sand_drop_point)
+    );
 }
