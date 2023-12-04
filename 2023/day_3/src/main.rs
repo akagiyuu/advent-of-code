@@ -47,7 +47,6 @@ fn part_number_sum(engine_scheme: &[&str]) -> usize {
 fn gear_ratio_sum(engine_scheme: &[&str]) -> usize {
     let row_count = engine_scheme.len();
     let column_count = engine_scheme[0].len();
-    let mut sum = 0;
     let mut gear_parts = HashMap::<(usize, usize), Vec<usize>>::new();
 
     for i in 0..row_count {
