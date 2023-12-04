@@ -3,17 +3,40 @@ use std::collections::HashSet;
 const INPUT: &str = include_str!("input.txt");
 
 fn get_matched_number_count(card: &str) -> usize {
-    let (_, card) = card.split_once(": ").unwrap();
-    let (winning_numbers, numbers) = card.split_once(" | ").unwrap();
-    let winning_numbers = winning_numbers
-        .split(' ')
-        .filter_map(|number| number.trim().parse::<usize>().ok())
-        .collect::<HashSet<_>>();
-    numbers
-        .split(' ')
-        .filter_map(|number| number.trim().parse::<usize>().ok())
-        .filter(|number| winning_numbers.contains(number))
-        .count()
+    let mut card_iter = card.chars();
+    let mut matched_count = 0;
+    let mut current_section = 0;
+    let mut winning_numbers = HashSet::new();
+
+    for char in card_iter.by_ref() {
+        if char == ':' {
+            break;
+        }
+    }
+    let mut temp_value = 0;
+    for char in card_iter.by_ref() {
+        match char {
+            '|' => current_section += 1,
+            char if char.is_ascii_digit() => {
+                temp_value = temp_value * 10 + char.to_digit(10).unwrap() as usize;
+            }
+            _ => {
+                if temp_value == 0 {
+                    continue;
+                }
+                if current_section == 0 {
+                    winning_numbers.insert(temp_value);
+                } else if winning_numbers.contains(&temp_value) {
+                    matched_count += 1;
+                }
+                temp_value = 0;
+            }
+        }
+    }
+    if temp_value > 0 && winning_numbers.contains(&temp_value) {
+        matched_count += 1;
+    }
+    matched_count
 }
 
 fn get_total_card_earned(cards: &str) -> usize {
