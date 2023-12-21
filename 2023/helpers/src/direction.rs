@@ -20,6 +20,14 @@ impl From<u8> for Direction {
     }
 }
 impl Direction {
+    pub fn all() -> [Direction; 4] {
+        [
+            Direction::Right,
+            Direction::Down,
+            Direction::Left,
+            Direction::Up,
+        ]
+    }
     pub fn unchecked_apply(&self, coordinate: Coordinate, count: usize) -> Coordinate {
         assert!(count > 0);
         match self {
