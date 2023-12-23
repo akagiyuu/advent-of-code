@@ -11,10 +11,10 @@ pub enum Direction {
 impl From<u8> for Direction {
     fn from(value: u8) -> Direction {
         match value {
-            b'R' | b'0' => Direction::Right,
-            b'D' | b'1' => Direction::Down,
-            b'L' | b'2' => Direction::Left,
-            b'U' | b'3' => Direction::Up,
+            b'R' | b'0' | b'>' => Direction::Right,
+            b'D' | b'1' | b'v' => Direction::Down,
+            b'L' | b'2' | b'<' => Direction::Left,
+            b'U' | b'3' | b'^' => Direction::Up,
             _ => unreachable!(),
         }
     }
