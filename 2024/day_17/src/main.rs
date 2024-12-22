@@ -43,46 +43,46 @@ fn get_machine_output(mut registers: [u64; 3], instructions: &[(u64, u64)]) -> V
     output
 }
 
-fn is_possible_to_recover(
-    mut registers: [u64; 3],
-    instructions: &[(u64, u64)],
-    instructions_raw: &[u64],
-) -> bool {
+fn get_first_machine_output(mut registers: [u64; 3], instructions: &[(u64, u64)]) -> u64 {
     let mut output = Vec::new();
     let mut pc = 0;
 
     while pc < instructions.len() {
         let (opcode, operand) = instructions[pc];
         (registers, output, pc) = process_instruction(opcode, operand, registers, output, pc);
-
-        let out_len = output.len();
-        if out_len > instructions_raw.len()
-            || (out_len > 0 && output[out_len - 1] != instructions_raw[out_len - 1])
-        {
-            return false;
+        if output.len() == 1 {
+            return output[0];
         }
     }
 
-    let out_len = output.len();
-    if out_len != instructions_raw.len() || output[out_len - 1] != instructions_raw[out_len - 1] {
-        return false;
-    }
-
-    true
+    unreachable!()
 }
 
 fn find_register_a(
-    mut registers: [u64; 3],
+    registers: [u64; 3],
     instructions: &[(u64, u64)],
     instructions_raw: &[u64],
-) -> u64 {
-    loop {
-        if is_possible_to_recover(registers, instructions, instructions_raw) {
-            return registers[0];
-        }
-
-        registers[0] += 1;
+) -> Option<u64> {
+    if instructions_raw.is_empty() {
+        return Some(registers[0] / 8);
     }
+
+    let len = instructions_raw.len();
+
+    for i in 0..8 {
+        let mut new_register = registers;
+        new_register[0] += i;
+        if get_first_machine_output(new_register, instructions) != instructions_raw[len - 1] {
+            continue;
+        }
+        new_register[0] *= 8;
+        if let Some(res) = find_register_a(new_register, instructions, &instructions_raw[..len - 1])
+        {
+            return Some(res);
+        }
+    }
+
+    None
 }
 
 fn main() {
@@ -117,9 +117,10 @@ fn main() {
             .join(",")
     );
 
-    registers[0] = 1;
+    // first 3 bit affect last output, second 3 bit affect second-last output, ...
+    registers[0] = 0;
     println!(
         "{}",
-        find_register_a(registers, &instructions, &instructions_raw)
+        find_register_a(registers, &instructions, &instructions_raw).unwrap()
     );
 }
