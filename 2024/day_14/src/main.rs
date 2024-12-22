@@ -1,5 +1,7 @@
 use std::cmp::Ordering;
 
+use itertools::Itertools;
+
 const INPUT: &str = include_str!("../input.txt");
 
 fn parse_location(raw: &str) -> (i64, i64) {
@@ -18,14 +20,11 @@ fn parse_robot(raw: &str) -> ((i64, i64), (i64, i64)) {
     (p, v)
 }
 
-fn process(p: (i64, i64), v: (i64, i64), iter: i64, xs: i64, ys: i64) -> (i64, i64) {
-    let x = p.0 + v.0 * iter;
-    let x = (x % xs + xs) % xs;
-
-    let y = p.1 + v.1 * iter;
-    let y = (y % ys + ys) % ys;
-
-    (x, y)
+fn next(p: (i64, i64), v: (i64, i64), iter: i64, xs: i64, ys: i64) -> (i64, i64) {
+    (
+        (p.0 + v.0 * iter).rem_euclid(xs),
+        (p.1 + v.1 * iter).rem_euclid(ys),
+    )
 }
 
 fn calculate_safety_factor(robots: &str, iter: i64, xs: i64, ys: i64) -> usize {
@@ -33,7 +32,7 @@ fn calculate_safety_factor(robots: &str, iter: i64, xs: i64, ys: i64) -> usize {
     let coords = robots
         .lines()
         .map(parse_robot)
-        .map(|(p, v)| process(p, v, iter, xs, ys));
+        .map(|(p, v)| next(p, v, iter, xs, ys));
 
     for (x, y) in coords {
         match (x.cmp(&(xs / 2)), y.cmp(&(ys / 2))) {
@@ -48,6 +47,26 @@ fn calculate_safety_factor(robots: &str, iter: i64, xs: i64, ys: i64) -> usize {
     robot_count.iter().product()
 }
 
+fn is_tree(robots: &[((i64, i64), (i64, i64))]) -> bool {
+    robots.iter().map(|&(position, _)| position).all_unique()
+}
+
+fn calculate_iter_to_make_tree(robots: &str, xs: i64, ys: i64) -> usize {
+    let mut robots = robots.lines().map(parse_robot).collect_vec();
+    let mut iter = 0;
+
+    while !is_tree(&robots) {
+        robots = robots
+            .into_iter()
+            .map(|(position, velocity)| (next(position, velocity, 1, xs, ys), velocity))
+            .collect();
+        iter += 1;
+    }
+
+    iter
+}
+
 fn main() {
-    println!("{}", calculate_safety_factor(INPUT, 100, 101, 103))
+    println!("{}", calculate_safety_factor(INPUT, 100, 101, 103));
+    println!("{}", calculate_iter_to_make_tree(INPUT, 101, 103));
 }
