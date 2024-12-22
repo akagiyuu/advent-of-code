@@ -1,12 +1,6 @@
 const INPUT: &str = include_str!("../input.txt");
 
-use std::collections::{HashMap, VecDeque};
-
-fn print_grid(grid: &[Vec<u8>]) {
-    for row in grid.iter() {
-        println!("{}", String::from_utf8(row.to_vec()).unwrap());
-    }
-}
+use std::collections::{HashSet, VecDeque};
 
 fn find(c: u8, grid: &[Vec<u8>]) -> Option<(usize, usize)> {
     let m = grid.len();
@@ -64,73 +58,57 @@ fn generate_distance_map((cx, cy): (usize, usize), grid: &[Vec<u8>]) -> Vec<Vec<
     distance_map
 }
 
-fn unlock(
-    queue: &mut VecDeque<(usize, usize)>,
-    mut distance_map: Vec<Vec<usize>>,
-    grid: &[Vec<u8>],
-) -> Vec<Vec<usize>> {
-    while let Some((x, y)) = queue.pop_front() {
-        let mut min_neighbor = usize::MAX;
-        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-            let Some((nx, ny)) = into_valid((x as isize + dx, y as isize + dy), grid) else {
-                continue;
-            };
-            min_neighbor = min_neighbor.min(distance_map[nx][ny]);
-        }
-
-        if min_neighbor == usize::MAX || min_neighbor + 1 >= distance_map[x][y] {
-            continue;
-        }
-
-        distance_map[x][y] = min_neighbor + 1;
-        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-            let Some((nx, ny)) = into_valid((x as isize + dx, y as isize + dy), grid) else {
-                continue;
-            };
-            queue.push_back((nx, ny));
-        }
-    }
-
-    distance_map
-}
-
-fn count_cheat_above_threshold(threshold: usize, mut grid: Vec<Vec<u8>>) -> usize {
+fn count_cheat_above_threshold(threshold: usize, cheat_time: usize, grid: &[Vec<u8>]) -> usize {
     let n = grid.len();
     let m = grid[0].len();
-    let mut test = HashMap::<usize, usize>::new();
 
-    let start = find(b'S', &grid).unwrap();
-    let end = find(b'E', &grid).unwrap();
-    let distance_map = generate_distance_map(end, &grid);
-    let original_dis = distance_map[start.0][start.1];
-    let mut queue = VecDeque::new();
+    let start = find(b'S', grid).unwrap();
+    let end = find(b'E', grid).unwrap();
+    let start_dis_map = generate_distance_map(start, grid);
+    let end_dis_map = generate_distance_map(end, grid);
+    let original_dis = start_dis_map[end.0][end.1];
+
     let mut count = 0;
 
+    let mut cache = HashSet::<[usize; 4]>::new();
     for x in 0..n {
         for y in 0..m {
-            for (dx, dy) in [(1, 0), (0, 1)] {
-                let Some((nx, ny)) = into_valid((x as isize + dx, y as isize + dy), &grid) else {
-                    continue;
-                };
-                if grid[x][y] != b'#' && grid[nx][ny] != b'#' {
-                    continue;
+            if grid[x][y] == b'#' {
+                continue;
+            }
+            for size_x in 0..=cheat_time {
+                for size_y in 0..=cheat_time - size_x {
+                    let mut sizes = HashSet::new();
+                    if x >= size_x && y >= size_y {
+                        sizes.insert((x - size_x, y - size_y));
+                    }
+                    if x >= size_x && y + size_y < m {
+                        sizes.insert((x - size_x, y + size_y));
+                    }
+                    if x + size_x < n && y >= size_y {
+                        sizes.insert((x + size_x, y - size_y));
+                    }
+                    if x + size_x < n && y + size_y < m {
+                        sizes.insert((x + size_x, y + size_y));
+                    }
+
+                    for (rx, ry) in sizes {
+                        if cache.contains(&[x, y, rx, ry]) || cache.contains(&[rx, ry, x, y]) {
+                            continue;
+                        }
+                        let new_dis = start_dis_map[rx][ry]
+                            .saturating_add(end_dis_map[x][y])
+                            .min(start_dis_map[x][y].saturating_add(end_dis_map[rx][ry]))
+                            .saturating_add(rx.abs_diff(x) + ry.abs_diff(y));
+                        if original_dis <= new_dis {
+                            continue;
+                        }
+                        cache.insert([x, y, rx, ry]);
+                        if original_dis - new_dis >= threshold {
+                            count += 1;
+                        }
+                    }
                 }
-
-                let tmp = (grid[x][y], grid[nx][ny]);
-                grid[x][y] = b'.';
-                grid[nx][ny] = b'.';
-
-                queue.push_back((x, y));
-                queue.push_back((nx, ny));
-
-                let new_dis_map = unlock(&mut queue, distance_map.clone(), &grid);
-                let new_dis = new_dis_map[start.0][start.1];
-                *test.entry(original_dis - new_dis).or_default() += 1;
-                if original_dis - new_dis >= threshold {
-                    count += 1;
-                }
-
-                (grid[x][y], grid[nx][ny]) = tmp;
             }
         }
     }
@@ -141,5 +119,6 @@ fn count_cheat_above_threshold(threshold: usize, mut grid: Vec<Vec<u8>>) -> usiz
 fn main() {
     let grid: Vec<_> = INPUT.lines().map(|line| line.as_bytes().to_vec()).collect();
 
-    println!("{}", count_cheat_above_threshold(100, grid));
+    println!("{}", count_cheat_above_threshold(100, 2, &grid));
+    println!("{}", count_cheat_above_threshold(100, 20, &grid));
 }
