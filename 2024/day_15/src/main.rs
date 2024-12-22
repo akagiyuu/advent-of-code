@@ -1,87 +1,81 @@
+#![feature(iter_array_chunks)]
+
 const INPUT: &str = include_str!("../input.txt");
+const DIRS: [u8; 4] = [b'^', b'>', b'v', b'<'];
 
-enum Direction {
-    Up,
-    Right,
-    Down,
-    Left,
+fn into_dir(raw: u8) -> u8 {
+    DIRS.into_iter().position(|x| x == raw).unwrap() as u8
 }
 
-impl From<u8> for Direction {
-    fn from(value: u8) -> Self {
-        match value {
-            b'^' => Direction::Up,
-            b'>' => Direction::Right,
-            b'v' => Direction::Down,
-            b'<' => Direction::Left,
-            _ => unreachable!(),
-        }
-    }
-}
-
-fn step(
-    (ri, rj): (usize, usize),
-    dir: Direction,
-    mut grid: Vec<Vec<u8>>,
-) -> (Vec<Vec<u8>>, (usize, usize)) {
+fn apply((x, y): (usize, usize), dir: u8) -> (usize, usize) {
     match dir {
-        Direction::Up => {
-            let mut i = ri - 1;
-            while grid[i][rj] == b'O' {
-                i -= 1;
-            }
-            if grid[i][rj] == b'#' {
-                return (grid, (ri, rj));
-            }
-            grid[i][rj] = grid[ri - 1][rj];
-            grid[ri - 1][rj] = grid[ri][rj];
-            grid[ri][rj] = b'.';
-
-            (grid, (ri - 1, rj))
-        }
-        Direction::Right => {
-            let mut j = rj + 1;
-            while grid[ri][j] == b'O' {
-                j += 1;
-            }
-            if grid[ri][j] == b'#' {
-                return (grid, (ri, rj));
-            }
-            grid[ri][j] = grid[ri][rj + 1];
-            grid[ri][rj + 1] = grid[ri][rj];
-            grid[ri][rj] = b'.';
-
-            (grid, (ri, rj + 1))
-        }
-        Direction::Down => {
-            let mut i = ri + 1;
-            while grid[i][rj] == b'O' {
-                i += 1;
-            }
-            if grid[i][rj] == b'#' {
-                return (grid, (ri, rj));
-            }
-            grid[i][rj] = grid[ri + 1][rj];
-            grid[ri + 1][rj] = grid[ri][rj];
-            grid[ri][rj] = b'.';
-
-            (grid, (ri + 1, rj))
-        }
-        Direction::Left => {
-            let mut j = rj - 1;
-            while grid[ri][j] == b'O' {
-                j -= 1;
-            }
-            if grid[ri][j] == b'#' {
-                return (grid, (ri, rj));
-            }
-            grid[ri][j] = grid[ri][rj - 1];
-            grid[ri][rj - 1] = grid[ri][rj];
-            grid[ri][rj] = b'.';
-
-            (grid, (ri, rj - 1))
-        }
+        0 => (x - 1, y),
+        1 => (x, y + 1),
+        2 => (x + 1, y),
+        3 => (x, y - 1),
+        _ => unreachable!(),
     }
+}
+
+fn is_moveable((x, y): (usize, usize), dir: u8, grid: &[Vec<u8>]) -> bool {
+    match grid[x][y] {
+        b'#' => false,
+        b'.' => true,
+        b'@' | b'O' => is_moveable(apply((x, y), dir), dir, grid),
+        b'[' if dir % 2 == 1 => is_moveable(apply((x, y), dir), dir, grid),
+        b'[' => {
+            is_moveable(apply((x, y), dir), dir, grid)
+                && is_moveable(apply((x, y + 1), dir), dir, grid)
+        }
+        b']' if dir % 2 == 1 => is_moveable(apply((x, y), dir), dir, grid),
+        b']' => is_moveable((x, y - 1), dir, grid),
+        _ => unreachable!(),
+    }
+}
+
+fn move_obj((x, y): (usize, usize), dir: u8, grid: &mut [Vec<u8>]) {
+    match grid[x][y] {
+        b'@' | b'O' => {
+            let (nx, ny) = apply((x, y), dir);
+            move_obj((nx, ny), dir, grid);
+            grid[nx][ny] = grid[x][y];
+            grid[x][y] = b'.';
+        }
+        b'[' if dir % 2 == 1 => {
+            let (nx, ny) = apply((x, y), dir);
+            move_obj((nx, ny), dir, grid);
+            grid[nx][ny] = grid[x][y];
+            grid[x][y] = b'.';
+        }
+        b']' if dir % 2 == 1 => {
+            let (nx, ny) = apply((x, y), dir);
+            move_obj((nx, ny), dir, grid);
+            grid[nx][ny] = grid[x][y];
+            grid[x][y] = b'.';
+        }
+        b'[' => {
+            let (rx, ry) = (x, y + 1);
+            let (nx, ny) = apply((x, y), dir);
+            let (nrx, nry) = apply((rx, ry), dir);
+            move_obj((nx, ny), dir, grid);
+            move_obj((nrx, nry), dir, grid);
+            grid[nx][ny] = grid[x][y];
+            grid[x][y] = b'.';
+
+            grid[nrx][nry] = grid[rx][ry];
+            grid[rx][ry] = b'.';
+        }
+        b']' => move_obj((x, y - 1), dir, grid),
+        _ => {}
+    }
+}
+
+fn move_robot((x, y): (usize, usize), dir: u8, grid: &mut [Vec<u8>]) -> (usize, usize) {
+    if !is_moveable((x, y), dir, grid) {
+        return (x, y);
+    }
+    move_obj((x, y), dir, grid);
+    apply((x, y), dir)
 }
 
 fn find_robot(grid: &[Vec<u8>]) -> (usize, usize) {
@@ -96,38 +90,44 @@ fn find_robot(grid: &[Vec<u8>]) -> (usize, usize) {
     (0, 0)
 }
 
-fn print_grid(grid: &[Vec<u8>]) {
-    for row in grid.iter() {
-        println!("{}", String::from_utf8(row.to_vec()).unwrap());
-    }
-}
-
-fn gps_sum(grid: Vec<Vec<u8>>, dirs: impl Iterator<Item = Direction>) -> usize {
+fn gps_sum(mut grid: Vec<Vec<u8>>, dirs: impl Iterator<Item = u8>) -> usize {
     let robot = find_robot(&grid);
-    let (grid, _) = dirs.fold((grid, robot), |(grid, robot), dir| {
-        // print_grid(&grid);
-        // println!();
-        step(robot, dir, grid)
-    });
-    // print_grid(&grid);
-    // println!();
+    dirs.fold(robot, |robot, dir| move_robot(robot, dir, &mut grid));
 
     grid.iter().enumerate().fold(0, |acc, (i, row)| {
         acc + row.iter().enumerate().fold(0, |acc, (j, &cell)| {
-            acc + if cell == b'O' { 100 * i + j } else { 0 }
+            acc + if cell == b'O' || cell == b'[' {
+                100 * i + j
+            } else {
+                0
+            }
         })
     })
 }
 
+fn map_grid(grid: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
+    grid.into_iter()
+        .map(|row| {
+            row.into_iter()
+                .flat_map(|x| match x {
+                    b'#' => [b'#'; 2],
+                    b'.' => [b'.'; 2],
+                    b'O' => [b'[', b']'],
+                    b'@' => [b'@', b'.'],
+                    _ => unreachable!(),
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
 fn main() {
     let (grid, dirs) = INPUT.split_once("\n\n").unwrap();
-    let grid = grid
+    let grid: Vec<Vec<u8>> = grid
         .lines()
-        .map(|line| line.trim().as_bytes().to_vec())
+        .map(|line| line.trim().bytes().collect())
         .collect();
-    let dirs = dirs
-        .lines()
-        .flat_map(|line| line.as_bytes())
-        .map(|dir| Direction::from(*dir));
-    println!("{}", gps_sum(grid, dirs));
+    let dirs = dirs.lines().flat_map(|line| line.bytes().map(into_dir));
+    println!("{}", gps_sum(grid.clone(), dirs.clone()));
+    println!("{}", gps_sum(map_grid(grid), dirs));
 }
