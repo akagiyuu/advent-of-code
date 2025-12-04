@@ -1,5 +1,9 @@
 [workspace]
 members = [
-    "day_1", "day_10", "day_11", "day_12", "day_13", "day_14", "day_2", "day_3", "day_4", "day_9",
+    "day_1", "day_10", "day_11", "day_12", "day_13", "day_14", "day_15", "day_2", "day_3", "day_4", "day_9",
 ]
 resolver = "2"
+
+[workspace.dependencies]
+anyhow = "1.0.75"
+evalexpr = "11.2.0"
